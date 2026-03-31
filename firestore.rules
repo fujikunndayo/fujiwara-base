@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // メンバーかどうかのヘルパー
+    function isMember() {
+      return request.auth != null && exists(/databases/$(database)/documents/members/$(request.auth.uid));
+    }
+
+    // メンバーのみ読み書き可能
+    match /base/{docId} {
+      allow read, write: if isMember();
+    }
+
+    match /tasks/{taskId} {
+      allow read, write: if isMember();
+
+      match /comments/{commentId} {
+        allow read, write: if isMember();
+      }
+    }
+
+    match /logs/{logId} {
+      allow read, write: if isMember();
+    }
+
+    match /workdays/{dateStr} {
+      allow read, write: if isMember();
+    }
+
+    // メンバー一覧: メンバーのみ読める / 書き込みは招待フロー経由（認証済みユーザーが自分のドキュメントを作成可能）
+    match /members/{uid} {
+      allow read: if isMember();
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow update, delete: if isMember() && request.auth.uid == uid;
+    }
+
+    // 招待リンク
+    match /invites/{token} {
+      // 未使用の招待リンクは認証済みユーザーが読める（招待フロー用）
+      allow read: if request.auth != null;
+      // メンバーのみ作成可能
+      allow create: if isMember();
+      // 認証済みユーザーが使用済みに更新できる（招待受け入れ時）
+      allow update: if request.auth != null;
+    }
+  }
+}
