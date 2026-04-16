@@ -61,7 +61,7 @@ function StatusBadge({ status }) {
   );
 }
 
-function ProjectCard({ project, member }) {
+function ProjectCard({ project, member, members }) {
   const [editing, setEditing] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('');
   const [statusNote, setStatusNote] = useState('');
@@ -116,6 +116,20 @@ function ProjectCard({ project, member }) {
           {project.statusNote && (
             <p style={{ color: 'var(--text-sub)', fontSize: '13px', marginTop: '6px' }}>{project.statusNote}</p>
           )}
+          {project.updatedBy && (() => {
+            const updater = members.find(m => m.uid === project.updatedBy);
+            return updater ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--card-border)' }}>
+                {updater.photoURL && (
+                  <img src={updater.photoURL} alt="" referrerPolicy="no-referrer"
+                    style={{ width: '16px', height: '16px', borderRadius: '50%' }} />
+                )}
+                <span style={{ fontSize: '11px', color: 'var(--text-sub)' }}>
+                  {updater.displayName?.split(' ')[0]} が更新
+                </span>
+              </div>
+            ) : null;
+          })()}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -303,7 +317,7 @@ export default function HomePage() {
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {projects.map(project => (
-            <ProjectCard key={project.id} project={project} member={member} />
+            <ProjectCard key={project.id} project={project} member={member} members={members} />
           ))}
         </div>
       </div>
@@ -331,14 +345,30 @@ export default function HomePage() {
         <Card>
           <CardTitle>最近の活動</CardTitle>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {logs.map(log => (
-              <div key={log.id} style={{ borderBottom: '1px solid var(--card-border)', paddingBottom: '10px' }}>
-                <p style={{ fontSize: '12px', color: 'var(--text-sub)', marginBottom: '2px' }}>{log.date}</p>
-                <p style={{ fontSize: '14px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                  {log.text}
-                </p>
-              </div>
-            ))}
+            {logs.map(log => {
+              const logCreator = members.find(m => m.uid === log.createdBy);
+              return (
+                <div key={log.id} style={{ borderBottom: '1px solid var(--card-border)', paddingBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <p style={{ fontSize: '12px', color: 'var(--text-sub)' }}>{log.date}</p>
+                    {logCreator && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {logCreator.photoURL && (
+                          <img src={logCreator.photoURL} alt="" referrerPolicy="no-referrer"
+                            style={{ width: '16px', height: '16px', borderRadius: '50%' }} />
+                        )}
+                        <span style={{ fontSize: '11px', color: 'var(--text-sub)' }}>
+                          {logCreator.displayName?.split(' ')[0]}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <p style={{ fontSize: '14px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {log.text}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </Card>
       )}
@@ -347,7 +377,7 @@ export default function HomePage() {
       {members.length > 0 && (
         <Card>
           <CardTitle>メンバー</CardTitle>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', flewWrap: 'wrap', gap: '12px' }}>
             {members.map(m => (
               <div key={m.uid} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                 {m.photoURL && (
@@ -363,33 +393,32 @@ export default function HomePage() {
         </Card>
       )}
 
-      {/* エリア追加モーダル */}
+      {/* end of main */}
       {addingProject && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }}
           onClick={e => e.target === e.currentTarget && setAddingProject(false)}>
           <div style={{ width: '100%', background: '#242920', borderRadius: '16px 16px 0 0', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <h3 style={{ fontSize: '16px', fontWeight: '600' }}>エリアを追加</h3>
             <input autoFocus value={newProjectName} onChange={e => setNewProjectName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addProject()} placeholder="例：アプローチ練習場、庭、物置..." />
+              onKeyDown={e => e.key === 'Enter' && addProject()} placeholder="例：オプローチ絰紒場、席、狩绮..." />
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={addProject} style={{ flex: 1, background: 'var(--accent-green)', color: '#111', borderRadius: '10px', padding: '12px', fontWeight: '600', fontSize: '15px' }}>追加</button>
-              <button onClick={() => setAddingProject(false)} style={{ flex: 1, border: '1px solid var(--card-border)', borderRadius: '10px', padding: '12px', color: 'var(--text-sub)' }}>キャンセル</button>
+              <button onClick={() => setAddingProject(false)} style={{ flex: 1, border: '1px solid var(--card-border)', borderRadius: '10px', padding: '12px', color: 'var(--text-sub)' }}>カャンセル</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 作業日追加モーダル */}
       {addingWorkday && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }}
           onClick={e => e.target === e.currentTarget && setAddingWorkday(false)}>
           <div style={{ width: '100%', background: '#242920', borderRadius: '16px 16px 0 0', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <h3 style={{ fontSize: '16px', fontWeight: '600' }}>作業日を追加</h3>
             <input autoFocus type="date" value={newWorkDate} onChange={e => setNewWorkDate(e.target.value)} style={{ colorScheme: 'dark' }} />
-            <input value={newWorkNote} onChange={e => setNewWorkNote(e.target.value)} placeholder="メモ（任意）" />
+            <input value={newWorkNote} onChange={e => setNewWorkNote(e.target.value)} placeholder="メア（任意）" />
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={addWorkday} style={{ flex: 1, background: 'var(--accent-green)', color: '#111', borderRadius: '10px', padding: '12px', fontWeight: '600', fontSize: '15px' }}>追加</button>
-              <button onClick={() => setAddingWorkday(false)} style={{ flex: 1, border: '1px solid var(--card-border)', borderRadius: '10px', padding: '12px', color: 'var(--text-sub)' }}>キャンセル</button>
+              <button onClick={() => setAddingWorkday(false)} style={{ flex: 1, border: '1px solid var(--card-border)', borderRadius: '10px', padding: '12px', color: 'var(--text-sub)' }}>カャンセル</button>
             </div>
           </div>
         </div>

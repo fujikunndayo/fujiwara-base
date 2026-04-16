@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
 const AuthContext = createContext(null);
@@ -14,8 +14,22 @@ export function AuthProvider({ children }) {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        const snap = await getDoc(doc(db, 'members', firebaseUser.uid));
-        setMember(snap.exists() ? { uid: firebaseUser.uid, ...snap.data() } : null);
+        const memberRef = doc(db, 'members', firebaseUser.uid);
+        const snap = await getDoc(memberRef);
+        if (snap.exists()) {
+          setMember({ uid: firebaseUser.uid, ...snap.data() });
+        } else {
+          // 初回ログイン時に自動でmember登録
+          const newMember = {
+            displayName: firebaseUser.displayName,
+            email: firebaseUser.email,
+            photoURL: firebaseUser.photoURL,
+            joinedAt: serverTimestamp(),
+            invitedBy: null,
+          };
+          await setDoc(memberRef, newMember);
+          setMember({ uid: firebaseUser.uid, ...newMember });
+        }
       } else {
         setMember(null);
       }

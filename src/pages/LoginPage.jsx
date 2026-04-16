@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,8 +9,6 @@ const provider = new GoogleAuthProvider();
 export default function LoginPage() {
   const { user, member, loading } = useAuth();
   const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const notMember = params.get('notmember');
 
   useEffect(() => {
     if (!loading && user && member) navigate('/', { replace: true });
@@ -44,22 +42,6 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {notMember && (
-        <div style={{
-          background: 'rgba(224,112,112,0.12)',
-          border: '1px solid rgba(224,112,112,0.3)',
-          borderRadius: '10px',
-          padding: '12px 16px',
-          color: 'var(--danger)',
-          fontSize: '14px',
-          textAlign: 'center',
-          maxWidth: '320px',
-        }}>
-          このアカウントはメンバー登録されていません。<br />
-          招待リンクから参加してください。
-        </div>
-      )}
-
       <button
         onClick={handleLogin}
         style={{
@@ -87,7 +69,7 @@ export default function LoginPage() {
       </button>
 
       <p style={{ color: 'var(--text-sub)', fontSize: '13px', textAlign: 'center', maxWidth: '280px' }}>
-        初めての方は招待リンクが必要です
+        Googleアカウントでログインしてください
       </p>
     </div>
   );
